@@ -60,6 +60,7 @@ export default function Dashboard() {
   const [aiDecision, setAiDecision] = useState<Decision | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
 
   useEffect(() => {
     // Initial fetch for immediate data
@@ -112,15 +113,13 @@ export default function Dashboard() {
     eventSource.onerror = () => {
         console.warn("SSE connection lost. Reconnecting in 3s...");
         eventSource.close();
-        setTimeout(() => {
-            // The component will re-mount and create a new EventSource
-        }, 3000);
+        setTimeout(() => setReconnectAttempt(n => n + 1), 3000);
     };
 
     return () => {
         eventSource.close();
     };
-  }, []);
+  }, [reconnectAttempt]);
 
   const handleAiCommand = async () => {
     setIsAiLoading(true);

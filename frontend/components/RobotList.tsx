@@ -8,7 +8,7 @@ interface Props {
   robots: Robot[];
 }
 
-const statusConfig: Record<string, { bg: string; text: string; label?: string }> = {
+const statusConfig: Record<string, { bg: string; text: string }> = {
   IDLE:     { bg: "bg-gray-500/20",   text: "text-gray-300" },
   MOVING:   { bg: "bg-emerald-500/20", text: "text-emerald-400" },
   CHARGING: { bg: "bg-amber-500/20",  text: "text-amber-400" },
@@ -28,6 +28,7 @@ export default function RobotList({ robots }: Props) {
       {robots.length === 0 && <p className="text-gray-500">No active robots</p>}
       {robots.map((robot) => {
         const cfg = statusConfig[robot.status] || statusConfig.IDLE;
+        const clampedBattery = Math.min(100, Math.max(0, robot.battery));
         return (
           <div key={robot.id} className="p-3 border border-gray-700 rounded-lg bg-gray-800/50 backdrop-blur-sm">
             <div className="flex justify-between items-center mb-2">
@@ -38,12 +39,12 @@ export default function RobotList({ robots }: Props) {
             </div>
             <div className="w-full bg-gray-700 rounded-full h-2">
               <div
-                className={`h-2 rounded-full transition-all duration-500 ${getBatteryColor(robot.battery)}`}
-                style={{ width: `${Math.max(robot.battery, 0)}%` }}
+                className={`h-2 rounded-full transition-all duration-500 ${getBatteryColor(clampedBattery)}`}
+                style={{ width: `${clampedBattery}%` }}
               />
             </div>
             <div className="text-xs text-right mt-1 text-gray-400">
-              {robot.battery.toFixed(0)}% Battery
+              {clampedBattery.toFixed(0)}% Battery
             </div>
           </div>
         );

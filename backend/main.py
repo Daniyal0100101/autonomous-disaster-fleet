@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 from dotenv import load_dotenv
 from models import SimulationState, RobotState, MapGrid, Mission, Metrics
+from ai_decision import make_decision
 
 # Load environment variables FIRST
 load_dotenv()
@@ -93,22 +94,26 @@ def update_simulation_state(state: SimulationState):
 
 @app.post("/api/v1/ai/decide")
 def get_ai_decision():
-    from ai_decision import make_decision
-
-    if not current_state:
-        raise HTTPException(status_code=400, detail="No simulation state available")
+    if not current_state.robots:
+        raise HTTPException(
+            status_code=400, detail="No simulation state available: no robots in state"
+        )
 
     decision = make_decision(current_state)
 
-    if decision:
-        # Log decision to JSONL
+    if not decision:
+        raise HTTPException(status_code=500, detail="AI Decision failed")
+
+    # Log decision to JSONL
+    try:
         log_entry = {"step": current_state.step, "decision": decision.model_dump()}
         with open("logs/ai_decisions.jsonl", "a") as f:
             f.write(json.dumps(log_entry) + "\n")
+    except (IOError, OSError) as e:
+        logger.error(f"Failed to write AI decision log: {e}")
+        raise HTTPException(status_code=500, detail="Failed to log AI decision")
 
-        return decision
-    else:
-        raise HTTPException(status_code=500, detail="AI Decision failed")
+    return decision
 
 
 @app.get("/api/v1/state", response_model=SimulationState)

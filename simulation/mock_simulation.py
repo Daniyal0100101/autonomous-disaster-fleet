@@ -69,9 +69,19 @@ class Robot:
                 self.battery = 5.0
                 self.dead_timer = 0
                 self.position = list(self.start_pos)
-                self.target = CHARGING_STATIONS[0]
+                # Release any orphaned mission
+                if self.current_mission:
+                    self.current_mission["status"] = "PENDING"
+                    self.current_mission["assigned_robot"] = None
+                    self.current_mission = None
+                # Head to nearest charging station
+                closest_cs = min(
+                    CHARGING_STATIONS,
+                    key=lambda cs: abs(cs[0] - self.position[0])
+                    + abs(cs[1] - self.position[1]),
+                )
+                self.target = closest_cs
                 self.status = "MOVING"
-                self.current_mission = None
                 print(f"Robot {self.id} recovered! Heading to charging station.")
             return
 
@@ -153,7 +163,7 @@ def assign_missions():
         if mission["status"] == "PENDING":
             # Find available robot (not dead, not charging, idle)
             available_robots = [
-                r for r in robots if r.status == "IDLE" and r.battery > 20
+                r for r in robots if r.status == "IDLE" and r.battery > 30
             ]
             if available_robots:
                 # Assign to closest robot

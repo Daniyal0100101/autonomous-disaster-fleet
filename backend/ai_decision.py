@@ -57,6 +57,7 @@ def make_decision(state: SimulationState) -> Optional[Decision]:
             config={
                 "response_mime_type": "application/json",
                 "response_schema": Decision,
+                "http_options": {"timeout": 15000},  # 15s timeout in ms
             },
         )
 
