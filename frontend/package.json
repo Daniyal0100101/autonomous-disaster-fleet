@@ -2,6 +2,8 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "author": "RescueRoute AI Team",
+  "description": "Real-time monitoring dashboard for autonomous disaster response fleet",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
