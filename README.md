@@ -1,2 +1,10 @@
-# rescueroute-ai
-Autonomous disaster response robot fleet simulation using Python, FastAPI, Gemini AI, and Next.js. Built for Lablab.ai Hackathon.
+# RescueRoute AI
+
+AI-powered rescue route optimization system.
+
+## Structure
+
+- **backend/**: FastAPI backend service
+- **simulation/**: Python-based simulation environment
+- **frontend/**: Next.js frontend application
+- **docker-compose.yml**: Orchestration for services
