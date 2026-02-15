@@ -17,7 +17,7 @@ Simulation service must be running at `SIMULATOR_BASE_URL` (default `http://127.
 - `SIM_POLL_INTERVAL_SECONDS=1.0`
 - `SIM_GRID_SIZE=50`
 - `FRONTEND_ORIGINS=http://localhost:3000,http://127.0.0.1:3000`
-- `GEMINI_API_KEY=...` (optional for AI endpoint)
+- `GEMINI_API_KEY=...` (required for `POST /api/v1/ai/decide`; requests will fail without it)
 
 ## Main endpoints
 - `GET /api/v1/stream`

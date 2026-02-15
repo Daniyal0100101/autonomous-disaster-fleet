@@ -6,6 +6,8 @@ RescueRoute AI has three runtime services:
 - `backend` (FastAPI, port 8000): polling bridge, SSE stream, AI decision endpoint
 - `frontend` (Next.js, port 3000): live operations dashboard
 
+Production deployments commonly run behind an external Nginx reverse proxy (server-side, not part of this repository) to route requests to the frontend and backend.
+
 ## Data Flow
 1. Simulator advances robot/mission state every second.
 2. Backend polls `GET /simulation/state` every second.
