@@ -143,6 +143,30 @@ def _convert_simulation_state(payload: dict, step: int) -> SimulationState:
     )
 
 
+def _build_metrics_snapshot(
+    state: SimulationState, simulator_metrics: Dict[str, float]
+) -> Metrics:
+    robots = list(state.robots)
+    completed_count = len(state.completed_missions)
+
+    active_count = sum(1 for robot in robots if robot.status != "DEAD")
+    current_total_battery = sum(max(0.0, min(100.0, robot.battery)) for robot in robots)
+    baseline_total_battery = len(robots) * 100.0
+    total_used = max(0.0, baseline_total_battery - current_total_battery)
+    fleet_battery = current_total_battery / len(robots) if robots else 0.0
+
+    return Metrics(
+        active_robots=active_count,
+        completed_missions=completed_count,
+        avg_delivery_time=round(simulator_metrics.get("avg_completion_time", 0.0), 1),
+        total_battery_used=round(total_used, 1),
+        fleet_battery=round(fleet_battery, 1),
+        total_distance_traveled=round(
+            simulator_metrics.get("total_distance_traveled", 0.0), 1
+        ),
+    )
+
+
 async def _fetch_simulator_state() -> Optional[dict]:
     url = f"{SIMULATOR_BASE_URL}/simulation/state"
 
@@ -227,10 +251,19 @@ async def stream_simulation_state(request: Request):
                 break
 
             async with state_lock:
-                payload = current_state.model_dump_json()
+                state_snapshot = current_state
+                simulator_metrics = dict(latest_simulator_metrics)
+
+            metrics_snapshot = _build_metrics_snapshot(state_snapshot, simulator_metrics)
+            payload = json.dumps(
+                {
+                    "state": state_snapshot.model_dump(),
+                    "metrics": metrics_snapshot.model_dump(),
+                }
+            )
 
             yield {"event": "update", "data": payload}
-            await asyncio.sleep(1)
+            await asyncio.sleep(SIM_POLL_INTERVAL_SECONDS)
 
     return EventSourceResponse(event_generator())
 
@@ -300,26 +333,10 @@ async def get_missions():
 async def get_metrics():
     try:
         async with state_lock:
-            robots = list(current_state.robots)
-            completed_count = len(current_state.completed_missions)
+            state_snapshot = current_state
             simulator_metrics = dict(latest_simulator_metrics)
 
-        active_count = sum(1 for robot in robots if robot.status != "DEAD")
-        current_total_battery = sum(max(0.0, min(100.0, robot.battery)) for robot in robots)
-        baseline_total_battery = len(robots) * 100.0
-        total_used = max(0.0, baseline_total_battery - current_total_battery)
-        fleet_battery = current_total_battery / len(robots) if robots else 0.0
-
-        return Metrics(
-            active_robots=active_count,
-            completed_missions=completed_count,
-            avg_delivery_time=round(simulator_metrics["avg_completion_time"], 1),
-            total_battery_used=round(total_used, 1),
-            fleet_battery=round(fleet_battery, 1),
-            total_distance_traveled=round(
-                simulator_metrics["total_distance_traveled"], 1
-            ),
-        )
+        return _build_metrics_snapshot(state_snapshot, simulator_metrics)
     except Exception as exc:
         logger.error("Error fetching metrics: %s", exc)
         raise HTTPException(status_code=500, detail="Internal Server Error")

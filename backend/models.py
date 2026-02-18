@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Tuple, Optional
 
 
@@ -39,4 +39,4 @@ class SimulationState(BaseModel):
     robots: List[RobotState]
     grid: MapGrid
     active_missions: List[Mission]
-    completed_missions: List[Mission] = []
+    completed_missions: List[Mission] = Field(default_factory=list)

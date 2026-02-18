@@ -13,6 +13,7 @@ Production deployments commonly run behind an external Nginx reverse proxy (serv
 2. Backend polls `GET /simulation/state` every second.
 3. Backend normalizes simulator payload into frontend-friendly schema.
 4. Frontend subscribes to `GET /api/v1/stream` (SSE) for live updates.
+   - Stream payload now includes both `state` and `metrics` snapshots.
 5. User-triggered AI decisions call `POST /api/v1/ai/decide`.
 
 ## API Endpoints
@@ -40,3 +41,4 @@ Production deployments commonly run behind an external Nginx reverse proxy (serv
 - CORS uses allowlisted origins (`FRONTEND_ORIGINS`) instead of wildcard defaults.
 - Secrets loaded from environment only (`.env`).
 - AI log writes are non-fatal; failed log writes do not crash request handling.
+- Frontend sends baseline security headers (frame, referrer, permissions policy).

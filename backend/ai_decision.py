@@ -1,9 +1,10 @@
-import os
-
 import logging
+import os
 from typing import List, Optional
-from pydantic import BaseModel, Field
+
 from google import genai
+from pydantic import BaseModel, Field, ValidationError
+
 from models import SimulationState
 
 # Configure logger
@@ -62,8 +63,20 @@ def make_decision(state: SimulationState) -> Optional[Decision]:
         )
 
         decision = response.parsed
+        if decision is None:
+            raw_text = getattr(response, "text", "") or ""
+            if raw_text:
+                decision = Decision.model_validate_json(raw_text)
+
+        if not isinstance(decision, Decision):
+            logger.error("Gemini response did not parse into a Decision payload.")
+            return None
+
         return decision
 
-    except Exception as e:
-        logger.error(f"Error calling Gemini AI: {e}")
+    except ValidationError as exc:
+        logger.error("Gemini response validation error: %s", exc)
+        return None
+    except Exception as exc:
+        logger.error("Error calling Gemini AI: %s", exc)
         return None
