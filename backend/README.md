@@ -20,7 +20,7 @@ Simulation service must be running at `SIMULATOR_BASE_URL` (default `http://127.
 - `GEMINI_API_KEY=...` (required for `POST /api/v1/ai/decide`; requests will fail without it)
 
 ## Main endpoints
-- `GET /api/v1/stream`
+- `GET /api/v1/stream` — SSE endpoint emitting an `update` event with JSON payload `{ state, metrics }`
 - `GET /api/v1/state`
 - `GET /api/v1/metrics`
 - `POST /api/v1/ai/decide`

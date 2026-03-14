@@ -18,5 +18,7 @@ Common values:
 
 ## Notes
 - Dashboard connects via SSE to `/api/v1/stream`.
+- Stream updates are delivered as an `update` SSE event whose JSON payload is `{ state, metrics }`.
+- The dashboard applies both state and metrics directly from the stream, so per-tick metrics polling is no longer required.
 - If map appears static, verify backend can reach simulator (`:8001`).
 - Event log panel reflects real stream activity and mission status transitions.

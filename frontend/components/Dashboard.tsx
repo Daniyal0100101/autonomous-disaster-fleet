@@ -58,6 +58,11 @@ interface Decision {
   reasoning: string;
 }
 
+interface StreamUpdate {
+  state: SimulationState;
+  metrics: Metrics;
+}
+
 function nowTime(): string {
   return new Date().toLocaleTimeString("en-US", {
     hour12: false,
@@ -127,10 +132,14 @@ export default function Dashboard() {
       appendLog(`INFO Stream connected to ${API_BASE}`);
     };
 
-    eventSource.onmessage = (event) => {
+    const handleStreamUpdate = (event: MessageEvent<string>) => {
       try {
-        const parsedData: SimulationState = JSON.parse(event.data);
+        const parsedUpdate: StreamUpdate = JSON.parse(event.data);
+        const parsedData = parsedUpdate.state;
+
         setData(parsedData);
+        setMetrics(parsedUpdate.metrics);
+        setConnectionError(null);
 
         if (previousStepRef.current === null) {
           appendLog(`INFO First simulation snapshot received (step ${parsedData.step})`);
@@ -151,20 +160,14 @@ export default function Dashboard() {
           }
         });
         previousMissionStatusRef.current = missionStatusMap;
-
-        fetch(`${API_BASE}/api/v1/metrics`)
-          .then((res) => (res.ok ? res.json() : null))
-          .then((payload) => {
-            if (payload) setMetrics(payload);
-          })
-          .catch((err) => {
-            console.error("Error fetching metrics:", err);
-          });
       } catch (error) {
         console.error("Error parsing SSE data:", error);
         appendLog("ERROR Invalid stream payload");
       }
     };
+
+    eventSource.addEventListener("update", handleStreamUpdate);
+    eventSource.onmessage = handleStreamUpdate;
 
     eventSource.onerror = () => {
       setConnectionError(`Stream disconnected from ${API_BASE}`);
@@ -177,6 +180,7 @@ export default function Dashboard() {
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
       }
+      eventSource.removeEventListener("update", handleStreamUpdate);
       eventSource.close();
     };
   }, [reconnectAttempt]);
